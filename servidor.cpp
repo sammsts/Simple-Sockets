@@ -1,92 +1,97 @@
 #include <iostream>
-#include <winsock2.h> // Biblioteca para sockets no Windows
-#include <ws2tcpip.h> // Funções adicionais para manipulação de endereços IP
-#pragma comment(lib, "ws2_32.lib") // Linka o arquivo de biblioteca ws2_32.lib
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <thread>    // Para múltiplas threads
+#include <string>
+#pragma comment(lib, "ws2_32.lib")
 
 #define PORT 7777
 
-bool isValidNumber(const char* str) {
-    for (int i = 0; str[i] != '\0'; i++) {
-        if (!isdigit(str[i])) return false;
+void handleClient(SOCKET clientSocket) {
+    char buffer[1024] = {0};
+    int valread = recv(clientSocket, buffer, 1024, 0);
+
+    if (valread > 0) {
+        buffer[valread] = '\0';
+        std::string clientMessage = buffer;
+
+        // Exibir mensagem recebida e IP do cliente
+        std::cout << "Numero recebido: " << clientMessage << std::endl;
+
+        // Verificar se o valor é válido e determinar se é par ou ímpar
+        int numero;
+        try {
+            numero = std::stoi(clientMessage);
+            std::string resposta = (numero % 2 == 0) ? "Numero eh par" : "Numero eh impar";
+            send(clientSocket, resposta.c_str(), resposta.length(), 0);
+        } catch (...) {
+            std::string resposta = "Erro: valor invalido";
+            send(clientSocket, resposta.c_str(), resposta.length(), 0);
+        }
     }
-    return true;
+
+    // Encerrar conexão com o cliente
+    closesocket(clientSocket);
 }
 
 int main() {
     WSADATA wsaData;
-    int server_fd, new_socket;
-    struct sockaddr_in address;
-    int addrlen = sizeof(address);
-    char buffer[1024] = {0};
+    SOCKET serverSocket;
+    struct sockaddr_in serverAddr, clientAddr;
+    int addrlen = sizeof(clientAddr);
 
-    // Inicializar o Winsock
-    if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
+    // Inicializar Winsock
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         std::cerr << "Falha na inicializacao do Winsock" << std::endl;
         return 1;
     }
 
-    // Criar o socket
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
-        std::cerr << "Erro ao criar o socket" << std::endl;
+    // Criar socket
+    if ((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+        std::cerr << "Erro ao criar socket" << std::endl;
         WSACleanup();
         return 1;
     }
 
-    // Configurar o endereço do servidor
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_addr.s_addr = INADDR_ANY;
+    serverAddr.sin_port = htons(PORT);
 
-    // Vincular o socket à porta 7777
-    if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) == SOCKET_ERROR) {
-        std::cerr << "Erro no bind" << std::endl;
-        closesocket(server_fd);
+    // Fazer bind na porta
+    if (bind(serverSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) {
+        std::cerr << "Erro ao fazer bind" << std::endl;
+        closesocket(serverSocket);
         WSACleanup();
         return 1;
     }
 
-    // Esperar por conexões
-    if (listen(server_fd, 3) == SOCKET_ERROR) {
+    std::cout << "Servidor aguardando conexoes na porta 7777..." << std::endl;
+
+    // Escutar por conexões
+    if (listen(serverSocket, 3) < 0) {
         std::cerr << "Erro ao escutar" << std::endl;
-        closesocket(server_fd);
+        closesocket(serverSocket);
         WSACleanup();
         return 1;
     }
 
-    std::cout << "Servidor aguardando conexoes na porta " << PORT << "..." << std::endl;
-
+    // Aceitar conexões em loop e criar uma nova thread para cada cliente
     while (true) {
-        if ((new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen)) == INVALID_SOCKET) {
+        SOCKET clientSocket = accept(serverSocket, (struct sockaddr *)&clientAddr, &addrlen);
+        if (clientSocket == INVALID_SOCKET) {
             std::cerr << "Erro ao aceitar conexao" << std::endl;
-            closesocket(server_fd);
+            closesocket(serverSocket);
             WSACleanup();
             return 1;
         }
 
-        // Receber número do cliente
-        int valread = recv(new_socket, buffer, 1024, 0);
-        buffer[valread] = '\0';
-        
-        std::string response;
-        if (!isValidNumber(buffer)) {
-            response = "Erro: valor invalido";
-        } else {
-            int number = atoi(buffer);
-            std::string parity = (number % 2 == 0) ? "par" : "impar";
-            response = "O numero e " + parity;
-
-            // Imprimir localmente se é par ou ímpar junto com o IP de origem
-            std::cout << "Recebido do IP " << inet_ntoa(address.sin_addr) << ": " << number << " e " << parity << std::endl;
-        }
-
-        // Enviar resposta ao cliente
-        send(new_socket, response.c_str(), response.length(), 0);
-        closesocket(new_socket);
+        // Criar uma nova thread para tratar o cliente
+        std::thread clientThread(handleClient, clientSocket);
+        clientThread.detach(); // Permitir que a thread funcione de forma independente
     }
 
-    // Finalizar Winsock
-    closesocket(server_fd);
+    // Encerrar o socket do servidor (nunca será alcançado neste loop infinito)
+    closesocket(serverSocket);
     WSACleanup();
-
     return 0;
 }
