@@ -21,7 +21,7 @@ int main() {
 
     // Inicializar o Winsock
     if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
-        std::cerr << "Falha na inicialização do Winsock" << std::endl;
+        std::cerr << "Falha na inicializacao do Winsock" << std::endl;
         return 1;
     }
 
@@ -53,11 +53,11 @@ int main() {
         return 1;
     }
 
-    std::cout << "Servidor aguardando conexões na porta " << PORT << "..." << std::endl;
+    std::cout << "Servidor aguardando conexoes na porta " << PORT << "..." << std::endl;
 
     while (true) {
         if ((new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen)) == INVALID_SOCKET) {
-            std::cerr << "Erro ao aceitar conexão" << std::endl;
+            std::cerr << "Erro ao aceitar conexao" << std::endl;
             closesocket(server_fd);
             WSACleanup();
             return 1;
@@ -69,14 +69,14 @@ int main() {
         
         std::string response;
         if (!isValidNumber(buffer)) {
-            response = "Erro: valor inválido";
+            response = "Erro: valor invalido";
         } else {
             int number = atoi(buffer);
-            std::string parity = (number % 2 == 0) ? "par" : "ímpar";
-            response = "O número é " + parity;
+            std::string parity = (number % 2 == 0) ? "par" : "impar";
+            response = "O numero e " + parity;
 
             // Imprimir localmente se é par ou ímpar junto com o IP de origem
-            std::cout << "Recebido do IP " << inet_ntoa(address.sin_addr) << ": " << number << " é " << parity << std::endl;
+            std::cout << "Recebido do IP " << inet_ntoa(address.sin_addr) << ": " << number << " e " << parity << std::endl;
         }
 
         // Enviar resposta ao cliente

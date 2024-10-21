@@ -32,7 +32,7 @@ int main() {
 
     // Conectar ao servidor
     if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-        std::cerr << "Conexão falhou" << std::endl;
+        std::cerr << "Conexao falhou" << std::endl;
         closesocket(sock);
         WSACleanup();
         return 1;
@@ -40,7 +40,7 @@ int main() {
 
     // Enviar número ao servidor
     std::string input;
-    std::cout << "Digite um número: ";
+    std::cout << "Digite um numero: ";
     std::cin >> input;
 
     send(sock, input.c_str(), input.length(), 0);
