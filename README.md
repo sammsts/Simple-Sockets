@@ -6,7 +6,6 @@
 
 2. Client
 - g++ cliente.cpp -o cliente -lws2_32 -finput-charset=UTF-8
-
 - cliente.exe
 
 ## To test the version with multiple threads, change the main branch to feat/multiples_threads
