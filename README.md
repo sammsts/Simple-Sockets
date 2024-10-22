@@ -1,3 +1,16 @@
+## To run and test the program, open the terminal (access the location where the executables are) and run the following commands:
+
+1. Server
+- g++ servidor.cpp -o servidor -lws2_32 -finput-charset=UTF-8
+- servidor.exe
+
+2. Client
+- g++ cliente.cpp -o cliente -lws2_32 -finput-charset=UTF-8
+
+- cliente.exe
+
+## To test the version with multiple threads, change the main branch to feat/multiples_threads
+
 # Simple:
 ![Captura de tela 2024-10-22 200303](https://github.com/user-attachments/assets/c29e5fa8-937e-4e43-9b29-169f55fa0ceb)
 
